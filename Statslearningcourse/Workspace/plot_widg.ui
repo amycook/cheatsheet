@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>991</width>
+    <height>601</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QFormLayout" name="formLayout">
+     <item row="0" column="0">
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>input file</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="CSIRO::Widgets::FileNameWidget" name="fileNameWidget">
+       <property name="wsDataPath" stdset="0">
+        <string>globalName:idontknow</string>
+       </property>
+       <property name="triggerUpdates" stdset="0">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>output file</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="CSIRO::Widgets::FileNameWidget" name="fileNameWidget_2">
+       <property name="wsDataPath" stdset="0">
+        <string>globalName:outfile</string>
+       </property>
+       <property name="triggerUpdates" stdset="0">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>plot colour</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="CSIRO::Widgets::ColorButton" name="colorSelectButton">
+       <property name="wsDataPath" stdset="0">
+        <string>globalName:color</string>
+       </property>
+       <property name="triggerUpdates" stdset="0">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="CSIRO::DataAnalysis::PlotWidget" name="plotWidget">
+     <property name="wsDataPath" stdset="0">
+      <string>globalName:plot</string>
+     </property>
+     <property name="triggerUpdates" stdset="0">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>CSIRO::DataAnalysis::PlotWidget</class>
+   <extends>QFrame</extends>
+   <header>DataAnalysis/Plot2D/Widgets/plotwidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>CSIRO::Widgets::ColorButton</class>
+   <extends>QPushButton</extends>
+   <header>Workspace/Widgets/colorbutton.h</header>
+  </customwidget>
+  <customwidget>
+   <class>CSIRO::Widgets::FileNameWidget</class>
+   <extends>QFrame</extends>
+   <header>Workspace/Widgets/filenamewidget.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

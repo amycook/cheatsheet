@@ -1,0 +1,174 @@
+---
+title: "d3js"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Let's Do This
+
+```{r cars, echo = F, results = "asis"}
+library(jsonlite)
+cat(
+    paste(
+        '<script>
+            var data = ',toJSON(cars),';
+        </script>'
+        , sep = "")
+    )
+```
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+
+<div id="plot1"></div>
+<div id="plot2"></div>
+
+<script>
+
+// set the dimensions and margins of the graph
+var margin = {top: 20, right: 20, bottom: 30, left: 50},
+    width = 900 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+// set the ranges
+var x = d3.scaleLinear().range([0, width]);
+var y = d3.scaleLinear().range([height, 0]);
+
+// append the svg object to the body of the page
+// appends a 'group' element to 'svg'
+// moves the 'group' element to the top left margin
+var svg = d3.select("#plot1").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+
+// format the data
+data.forEach(function(d) {
+    d.speed = +d.speed;
+    d.dist  = +d.dist;
+});
+
+// Scale the range of the data
+x.domain(d3.extent(data, function(d) { return d.speed; }));
+y.domain([0, d3.max(data, function(d) { return d.dist; })]);
+
+// Add the scatterplot
+svg.selectAll("dot")
+    .data(data)
+  .enter().append("circle")
+    .attr("r", 5)
+    .attr("cx", function(d) { return x(d.speed); })
+    .attr("cy", function(d) { return y(d.dist); });
+
+// Add the X Axis
+svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x));
+
+// Add the Y Axis
+svg.append("g")
+    .call(d3.axisLeft(y));
+
+</script>
+</body>
+
+
+# Separate this shit
+```{r}
+
+print('why')
+```
+
+
+<meta charset="utf-8">
+<style>
+
+button {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+}
+
+</style>
+<button onclick="transition()">Update</button>
+//<svg width="960" height="500"></svg>
+
+<script>
+
+var n = 20, // number of layers
+    m = 200, // number of samples per layer
+    k = 10; // number of bumps per layer
+
+var stack = d3.stack().keys(d3.range(n)).offset(d3.stackOffsetWiggle),
+    layers0 = stack(d3.transpose(d3.range(n).map(function() { return bumps(m, k); }))),
+    layers1 = stack(d3.transpose(d3.range(n).map(function() { return bumps(m, k); }))),
+    layers = layers0.concat(layers1);
+
+var svg = d3.select("#plot2").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+
+var x = d3.scaleLinear()
+    .domain([0, m - 1])
+    .range([0, width]);
+
+var y = d3.scaleLinear()
+    .domain([d3.min(layers, stackMin), d3.max(layers, stackMax)])
+    .range([height, 0]);
+
+var z = d3.interpolateCool;
+
+var area = d3.area()
+    .x(function(d, i) { return x(i); })
+    .y0(function(d) { return y(d[0]); })
+    .y1(function(d) { return y(d[1]); });
+
+svg.selectAll("path")
+  .data(layers0)
+  .enter().append("path")
+    .attr("d", area)
+    .attr("fill", function() { return z(Math.random()); });
+
+function stackMax(layer) {
+  return d3.max(layer, function(d) { return d[1]; });
+}
+
+function stackMin(layer) {
+  return d3.min(layer, function(d) { return d[0]; });
+}
+
+function transition() {
+  var t;
+  d3.selectAll("path")
+    .data((t = layers1, layers1 = layers0, layers0 = t))
+    .transition()
+      .duration(2500)
+      .attr("d", area);
+}
+
+// Inspired by Lee Byron’s test data generator.
+function bumps(n, m) {
+  var a = [], i;
+  for (i = 0; i < n; ++i) a[i] = 0;
+  for (i = 0; i < m; ++i) bump(a, n);
+  return a;
+}
+
+function bump(a, n) {
+  var x = 1 / (0.1 + Math.random()),
+      y = 2 * Math.random() - 0.5,
+      z = 10 / (0.1 + Math.random());
+  for (var i = 0; i < n; i++) {
+    var w = (i / n - y) * z;
+    a[i] += x * Math.exp(-w * w);
+  }
+}
+
+</script>
+
+

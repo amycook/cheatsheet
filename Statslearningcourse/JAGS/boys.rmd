@@ -1,0 +1,673 @@
+---
+title: "Citation Modelling"
+author: "Nicholas Tierney"
+date: "24 November 2015"
+output: html_document
+---
+
+```{r setup, include = F}
+
+library(knitr)
+
+opts_chunk$set(cache = T,
+               echo = T,
+               message = F,
+               warning = F)
+
+# libraries used
+
+library(dplyr)
+library(rjags)
+library(R2jags)
+library(reshape2)
+library(ggplot2)
+
+```
+
+
+The number of citations of a paper has is the "default" metric for quality. However, papers that have been published for longer have had more opportunities to be cited. This means that a paper published in 1990 with 100 citations might be rated higher than a paper published in 2014 with 20 citations, despite the fact that . This may be an inaccurate representations of the best rankings. This workshop aims to rank an academic's published papers, accounting for the length of time a paper has been out.
+
+A Poisson model is fit to predict the expected number of citations for a given paper, given the year it was published. To handle overdispersion, ($var(\theta) > \mu(\theta)$), a Gamma prior was used, effectively making this a negative binomial model (Zhou, 2012).
+
+This model is written as:
+
+$$
+y_i \sim Poisson(\lambda_i)
+$$
+
+$$
+\lambda_i = e ^{\beta_0 + \beta_1 x_i + \beta_2 x_i^2} \epsilon_i
+$$
+
+$$
+\epsilon_i \sim Gamma(\xi_i, \xi_i)
+$$
+
+
+
+JAGS code being:
+
+```
+model{
+    for(i in 1:N){
+		y[i] ~ dpois(lambda[i])
+		lambda[i] <- exp(lp[i])*eps[i]
+		
+		eps[i] ~ dgamma(xi,xi)
+		
+		lp[i] <- beta[1] + beta[2]*x[i,1] + beta[3]*x[i,2]
+
+    }
+	
+	for (j in 1:3){
+		beta[j] ~ dnorm(0.0,0.01)
+	}
+	xi ~ dgamma(0.1, 0.1)
+	
+}
+```
+
+Year was scaled and centred in the model to reduce correlation amongst parameters.
+
+# Model 1
+
+```{r M1-data}
+
+#= Read in data =#
+
+data <- 
+  read.csv("boys.csv",header=FALSE, stringsAsFactors = F) %>%
+  # rename variables
+  rename(name = V1,
+         citations = V2,
+         year = V3)
+
+```
+
+```{r M1-jags-prep}
+
+# predictor
+year <- data$year
+
+# response
+y <- data$citations
+
+# transform year
+yeart = (year - mean(year))/sd(year)
+
+# 
+x = cbind(yeart, yeart^2)
+
+# number of observations
+N = length(y)
+
+jags_data <- list("y" = y,
+                  "x" = x,
+                  "N" = N)
+
+jags_params <- c("beta","eps")
+
+# initialise values at zero to prevent pant shitting
+jags_inits <- function() {list(beta=rep(0,3))}
+
+```
+
+```{r}
+library(ggmcmc)
+# 
+# model_1 <- 
+#   jags(data = jags.data.1, 
+#        parameters.to.save = jags.params.1,
+#        n.chains = 1,
+#        n.thin = 50,
+#        n.iter = 51000,
+#        n.burnin = 1000, 
+#        model.file = "model.txt")
+
+```
+
+```{r}
+
+modelString <- 
+"model{
+    for(i in 1:N){
+		y[i] ~ dpois(lambda[i])
+		lambda[i] <- exp(lp[i])*eps[i]
+		eps[i] ~ dgamma(xi,xi)
+		lp[i] <- beta[1] + beta[2]*x[i,1] + beta[3]*x[i,2]
+    }
+	
+	for (j in 1:3){
+
+		beta[j] ~ dnorm(0.0,0.01)
+
+	}
+	xi ~ dgamma(0.1, 0.1)
+	
+}"
+# data to be used in the model...
+
+jags_model <- jags.model(textConnection(modelString),
+                        data = jags_data,
+                        n.chains = 1,
+                        inits = jags_inits,
+                        n.adapt = 1000)
+
+jags_fit <- coda.samples(model = jags_model,
+                         variable.names = jags_params,
+                         n.iter = 51000)
+
+
+```
+
+# Model 2
+
+
+$$
+y_i \sim Poisson(\lambda_i)
+$$
+
+$$
+\lambda_i = e ^ {(\beta_0 + \beta_1 x_i + \beta_2 x_i^2) \epsilon_i}
+$$
+
+$$
+\epsilon_i \sim Gamma(\xi_i, \xi_i)
+$$
+
+$$
+\xi = e ^{(\eta_0 + \eta_1 x_i + \eta_2 x_i^2)}
+$$
+
+The second model being fit in BUGS code as:
+
+```
+model{
+    for(i in 1:N){
+		y[i] ~ dpois(lambda[i])
+		lambda[i] <- exp(lp[i])*eps[i]
+		
+		eps[i] ~ dgamma(xi[i],xi[i])
+		
+		lp[i] <- beta[1] + beta[2]*x[i,1] + beta[3]*x[i,2]
+
+		xi[i] <- exp(lpv[i])
+		
+		lpv[i] <- eta[1] + eta[2]*x[i,1] + eta[3]*x[i,2]
+		
+    }
+	
+	for (j in 1:3){
+		beta[j] ~ dnorm(0.0,0.01)
+		eta[j] ~ dnorm(0.0,0.01)
+	}
+	#xi ~ dgamma(0.1, 0.1)
+	
+}
+```
+
+Model 2 was fit, and we observe the following about the parameters
+
+```{r M2-data}
+# Model 2
+
+#= Read in data =#
+
+data <- 
+  read.csv("boys.csv",
+           header=FALSE, 
+           stringsAsFactors = F) %>%
+  # rename variables
+  rename(name = V1,
+         citations = V2,
+         year = V3)
+
+```
+
+```{r M2-jags-prep}
+
+# predictor
+year <- data$year
+
+# response 
+y <- data$citations
+
+# transform year
+yeart = (year - mean(year))/sd(year)
+
+# 
+x = cbind(yeart, yeart^2)
+
+# number of observations
+N = length(y)
+
+jags.data.2 <- list("y","x","N")
+
+jags.params.2 <- c("beta","eta","eps")
+
+# initialise values at zero to prevent pant shitting
+jags.inits.2 <- function() { list(beta=rep(0,3),eta=rep(0,3)) }
+
+```
+
+```{r rjags-model-2, echo = T, eval = T, message = F, warning = F}
+
+set.seed(1002)
+jagsfit.2 <- jags(data=jags.data.2,
+                  jags.inits.2,
+                  parameters.to.save=jags.params.2,
+                  n.chains=1,
+                  n.thin=50,
+                  n.iter=101000,
+                  n.burnin=1000,
+                  model.file="model2.txt")
+```
+
+```{r rjags-model-2-data-munge}
+
+# beta
+beta.sims = jagsfit.2$BUGSoutput$sims.list$beta
+
+# eta
+eta.sims = jagsfit.2$BUGSoutput$sims.list$eta
+
+# epsilon
+eps.sims = log(jagsfit.2$BUGSoutput$sims.list$eps)
+
+# clean up the beta dataframe
+  beta_sims_df <- 
+    beta.sims %>% 
+    as.data.frame %>%
+    as_data_frame %>%
+    rename(beta_0 = V1,
+           beta_1 = V2,
+           beta_2 = V3)
+
+# clean up the eta dataframe
+  eta_sims_df <- 
+    eta.sims %>% 
+    as.data.frame %>%
+    as_data_frame %>%
+    rename(eta_0 = V1,
+           eta_1 = V2,
+           eta_2 = V3) 
+  
+# clean up the epsilon dataframe
+  eps_sims_df_melt <- 
+    eps.sims %>% 
+    as.data.frame %>%
+    as_data_frame %>%
+    melt
+
+```
+
+```{r}
+
+tm = exp(mean(beta.sims[,1]) +
+           mean(beta.sims[,2])*yeart +
+           mean(beta.sims[,3])*yeart^2)
+
+# plot(year,tm)
+
+qplot(year, tm)
+
+
+```
+
+Here we see the estimates for beta.
+
+```{r jags-m2-beta-densities}
+
+beta_sims_df %>%
+  melt %>% 
+  ggplot(data = .,
+         aes(x = value,
+             colour = variable,
+             fill = variable)) + 
+  geom_density(alpha = 0.5) 
+
+```
+
+Here we see the estimates for eta
+
+```{r jags-m2-eta-densities}
+
+eta_sims_df %>%
+  melt %>% 
+  ggplot(data = .,
+         aes(x = value,
+             colour = variable,
+             fill = variable)) + 
+  geom_density(alpha = 0.5) 
+
+```
+
+Let's look at the correlation amongst the simulated values of beta and eta
+
+```{r}
+
+cor(beta_sims_df) %>% kable
+
+cor(eta_sims_df) %>% kable
+
+```
+
+Now let's plot densities of the espilons
+
+```{r}
+
+ggplot(data = eps_sims_df_melt,
+       aes(x = value,
+           colour = variable)) + 
+  geom_density() + 
+  theme(legend.position = "none") + 
+  xlim(c(-10, 4)) + 
+  ylim(0,2)
+
+
+```
+
+
+```{r}
+
+# get the median of each column of the espilon values.
+eps.median <- apply(eps.sims, 2, median)
+
+```
+
+
+## Model 2: Ranking the Estimates
+
+Two different metrics for ranking:
+
+1. Estimates of the random effects
+1. Generalised Pearson Residual (GPR): $r_i^j = \frac{y_i - \mu_i(\theta_i)}{\sqrt{Var_i}(\theta_i)}$ for $i \dots n$ observations and $j \ldots J$ MCMC samples.
+
+We can also get the estimates of the rank for paper i at sample j, e.g. `1,1,1,2,2` for paper $i$.
+
+There are also 2 ways to rank the paper:
+
+With Uncertainty:
+
+- Estimates of the Random Effects
+- Generalised Pearson Residual
+
+No Uncertainty Measurements:
+
+- Median Residual
+- Median Estimate of Random Effects.
+
+
+Let's consider ranking by the random effects:
+
+```{r}
+# rank the estimates by the median
+
+median_eps <- 
+data %>% 
+  # add in a median epsilon value
+  mutate(median_epsilon = eps.median) %>%
+  # arrange median epsilon from largest to smallest
+  arrange(-median_epsilon) %>% 
+  select(-name)
+
+head(median_eps)
+tail(median_eps)
+
+kable(median_eps)
+
+# are they the same?
+# all.equal(data[data$rank,], arrange(data,-m))
+
+```
+
+### Model 2: Generalised Pearson Residual
+
+The Generalised Pearson Residual, $r_i^j$ is:
+
+$$
+r_i^j = \frac{y_i - \mu_i(\theta_j)}{\sqrt{Var_i(\theta_j)}}, \text{For } i \dots n \text{ papers, and } k \ldots j \text{ samples}
+$$
+
+Where $\mu$ is given by:
+
+$$
+\mu_i(\theta) = \mathbb{E}[\mathbb{E}[y_i \mid x_i, \boldsymbol{\theta}, \epsilon_i]] = \mathbb{E}[e ^ {\beta_0 + \beta_1 x_i + \beta_2 x_i^2} \epsilon_i]
+$$
+
+$$
+\mu_i(\theta) = e ^ {\beta_0 + \beta_1 x_i + \beta_2 x_i^2} * \mathbb{E} [\epsilon_i]
+$$
+
+$$
+\mathbb{E}[\epsilon_i] = 1
+$$
+
+$$
+\mu_i(\theta) = e ^ {\beta_0 + \beta_1 x_i + \beta_2 x_i^2}
+$$
+
+And $var$ is given by
+
+$$
+Var_i(\theta) = Var[y_i \mid x_i , \boldsymbol{\theta}] = Var[\mathbb{E}[y_i \mid x_i, \boldsymbol{\theta}, \epsilon_i]] + \mathbb{E}[Var[y_i \mid x_i , \boldsymbol{\theta} , \epsilon_i]]
+$$
+
+$$
+Var_i(\theta) = Var[ e ^ {\beta_0 + \beta_1 x_i + \beta_2 x_i^2} * \epsilon_i] + \mathbb{E}[ e ^ {\beta_0 + \beta_1 x_i + \beta_2 x_i^2} * \epsilon_i] 
+$$
+
+$$
+Var_i(\theta) = \mu_i(\theta)^2 Var[\epsilon_i] + \mu_i(\theta)
+$$
+
+$$
+Var_i(\theta) = \frac{\mu_i(\theta)^2}{e ^ {\eta_0 + \eta_1 x_i + \eta_2 x_i^2}} + \mu_i(\theta)
+$$
+
+
+```{r}
+
+#============================================
+# Calculate the Generalised Pearson Residual
+#============================================
+# r_ij = (y_i - mu_i_theta_j) / (sqrt(var_i_theta_j))
+
+# mu_i_theta_j = exp(beta_0 + beta_1 * x_i + beta_2 * x_i^2)
+
+# var_i_theta_j = ((mu_i_theta_j^2)/(exp)) + mu_i_theta_j 
+
+nsim <- jagsfit.2$BUGSoutput$n.sims
+
+nvar = nrow(data)
+
+# make a matrix of 0s to store these new residuals
+r <- matrix(0,
+            nrow = nsim,
+            ncol = nvar)
+
+for(i in 1:nrow(data)){
+
+ # calculate mu
+ mu <- exp(beta_sims_df$beta_0 + 
+             beta_sims_df$beta_1 * yeart[i] + 
+             beta_sims_df$beta_2 * yeart[i]^2)
+ 
+ # calculate the denominator term
+ denom <- exp(eta_sims_df$eta_0 + 
+                eta_sims_df$eta_1 * yeart[i] + 
+                eta_sims_df$eta_2 * yeart[i]^2)
+ 
+ # calculate the variance term
+ v <- mu^2/denom + mu
+ 
+ # calculate pearson's generalised residual
+ r[,i] = (y[i] - mu)/sqrt(v)
+ 
+}
+      
+```
+
+Let's just check the residuals for each sample (rows), for each paper (cols)
+
+```{r}
+# check it
+# head(r)
+
+r[1:5, 1:5] 
+
+r[1:5,103:108] 
+
+```
+
+Lets get the ranks of these residuals, through some brute force loop.
+
+```{r}
+
+# for each iteraction of the MCMC, we find what the rank was for each paper at each
+
+# make a new matrix to store the ranks
+ranks <- matrix(0, ncol = 108, nrow = nsim)
+for(j in (1:nsim)){
+  # get the corresponding rank of the highest residual
+  temp <- order(-r[j, ])
+  for(i in (1:108)){
+    ranks[j,temp[i]] <- i 
+  }
+}
+
+```
+
+So looking at the ranks here we have for each paper (column), the rank of its residual
+
+```{r}
+
+# head(ranks)
+
+ranks[1:5, 1:5]
+
+ranks[1:5, 103:108]
+
+```
+
+And here we can plot the ranks of the third paper - what is the most common rank?
+
+```{r}
+qplot(ranks[,3])
+
+# paper 1
+qplot(ranks[,1])
+
+```
+
+
+```{r}
+plot(density(r[,1]), xlim = c(-2, 10), ylim = c(0,10))
+# number of papers
+N = 108
+m = rep(0,N)
+m[1] = median(r[,1])
+for (i in 2:N){
+  points(density(r[,i]),type="l")
+  m[i] = median(r[,i])
+}  
+```
+
+
+```{r}
+plot(density(r[,108]), ylim = c(0, 2))
+points(density(r[,40]), type = "l")
+```
+
+
+```{r}
+# getting the CI bands
+lwr <- rep(0, 108)
+upr <- rep(0, 108)
+for(i in(1:108)){
+  lwr[i] <- quantile(ranks[,i], 0.05)
+  upr[i] <- quantile(ranks[,i], 0.95)
+}
+
+# lwr
+# upr
+```
+
+We have calculated `m`, which is the median of the GPR calculated for each individual paper. We can then add in some estimates of the upper and lower ranks, given by the 95% credible interval, we can then rank
+
+```{r}
+
+median_rank <- 
+data %>%
+  mutate(median_rank = m) %>%
+  arrange(-median_rank) %>%
+  mutate(lwr = lwr,
+         upr = upr,
+         rank = 1:108) %>%
+  .[,2:7]
+
+head(median_rank) %>% kable
+tail(median_rank) %>% kable
+
+median_rank %>% kable
+
+```
+
+
+```{r}
+# so now we want to add in confidence intervals around each rank.
+
+
+# OK, so it's a bit wierd that the rankings at the bottom aren't 
+
+summary(r[,108])
+```
+
+# Extensions
+
+- IRMCMC (Bayesian LOO-CV)
+- Include Multiple Academics
+- Non-parametric Spline
+- Survival Analysis
+- Google...
+
+
+```{r, include = F}
+# 
+# modelString <- "model{
+#     for(i in 1:N){
+# 		y[i] ~ dpois(lambda[i])
+# 		lambda[i] <- exp(lp[i])*eps[i]
+# 
+# 		eps[i] ~ dgamma(xi[i],xi[i])
+# 
+# 		lp[i] <- beta[1] + beta[2]*x[i,1] + beta[3]*x[i,2]
+# 
+# 		xi[i] <- exp(lpv[i])
+# 
+# 		lpv[i] <- eta[1] + eta[2]*x[i,1] + eta[3]*x[i,2]
+# 
+#     }
+# 
+# 	for (j in 1:3){
+# 		beta[j] ~ dnorm(0.0,0.01)
+# 		eta[j] ~ dnorm(0.0,0.01)
+# 	}
+# 	#xi ~ dgamma(0.1, 0.1)
+# 
+# }"
+# set.seed(1030)
+# model <- jags.model(textConnection(modelString),
+#                    data = list('x' = x,
+#                                'y' = y,
+#                                'N' = N),
+#                    n.chains = 1,
+#                    n.adapt = 1000)
+# 
+# set.seed(1002)
+# samples <- coda.samples(model = model,
+#                         variable.names = jags.params.2,
+#                         n.iter = 51000,
+#                         thin = 50)
+
+```

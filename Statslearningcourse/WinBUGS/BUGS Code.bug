@@ -1,0 +1,20 @@
+
+model{ 
+        for (i in 1:N) {
+                y[i] ~ dpois(lambda[i])
+                log.gamma[i] <- log(gamma[i])
+                lambda[i] <- exp(beta.0 + beta.1*Year[i] + beta.2*Year[i]*Year[i] + 
+                        log.gamma[i])
+                gamma[i] ~ dgamma(zeta[i], zeta[i])
+                #zeta[i] <- exp(eta.1*Year[i] + eta.2*Year[i]*Year[i])
+		zeta[i] <- exp(1*Year[i] + 1*Year[i]*Year[i])
+        }
+        beta.0 ~ dnorm(0,.01)
+        beta.1 ~ dnorm(0,.01)
+        beta.2 ~ dnorm(-10,.1)
+        #beta.3 ~ dnorm(0,10)
+        #eta.0 ~ dnorm(0,.01)
+        #eta.1 ~ dnorm(-10,.1)
+        #eta.2 ~ dnorm(-10,.1)      
+}
+	

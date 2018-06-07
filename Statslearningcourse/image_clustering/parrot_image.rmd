@@ -1,0 +1,154 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+
+library(jpeg)
+library(ggplot2)
+library(dplyr)
+library(purrr)
+
+# tutorial - http://alstatr.blogspot.com.au/2014/09/r-k-means-clustering-on-image.html
+```
+
+
+Import data
+
+```{r}
+# url <- "http://www.wall321.com/thumbnails/detail/20120304/colorful%20birds%20tropical%20head%203888x2558%20wallpaper_www.wall321.com_40.jpg"
+
+# Download the file and save it as "Image.jpg" in the directory
+# dFile <- download.file(url, "C:/Users/cook79166/OneDrive/shared files/Statslearningcourse/image_clustering/Image.jpg")
+# code above didn't work .. 
+
+# setwd("C:/Users/cook79166/OneDrive/shared files/Statslearningcourse/image_clustering/")
+setwd("/Users/yam/OneDrive/shared files/Statslearningcourse/image_clustering/")
+img <- readJPEG("Image.jpg") # Read the image
+imgDm <- dim(img)
+
+
+# Assign RGB channels to data frame
+imgRGB <- data.frame(
+  x = rep(1:imgDm[2], each = imgDm[1]),
+  y = rep(imgDm[1]:1, imgDm[2]),
+  R = as.vector(img[,,1]), # as.vector writes out each number by column into a single vector.
+  G = as.vector(img[,,2]),
+  B = as.vector(img[,,3])
+  )
+
+```
+
+# PLot using ggplot some how
+
+```{r}
+
+# ggplot theme to be used
+plotTheme <- function() {
+  theme(
+    panel.background = element_rect(
+      size = 3,
+      colour = "black",
+      fill = "white"),
+    axis.ticks = element_line(
+      size = 2),
+    panel.grid.major = element_line(
+      colour = "gray80",
+      linetype = "dotted"),
+    panel.grid.minor = element_line(
+      colour = "gray90",
+      linetype = "dashed"),
+    axis.title.x = element_text(
+      size = rel(1.2),
+      face = "bold"),
+    axis.title.y = element_text(
+      size = rel(1.2),
+      face = "bold"),
+    plot.title = element_text(
+      size = 20,
+      face = "bold",
+      vjust = 1.5)
+  )
+}
+
+ggplot(data = imgRGB, aes(x = x, y = y)) + 
+  geom_point(colour = rgb(imgRGB[c("R", "G", "B")])) +
+  labs(title = "Original Image: Colorful Bird") +
+  xlab("x") +
+  ylab("y") +
+  plotTheme()
+
+```
+
+
+Start K means clustering
+
+```{r}
+
+# write function to vary number of clusters
+
+img_clust <- function(kClusters = 3){
+        
+        kMeans <- kmeans(imgRGB[, c("R", "G", "B")], centers = kClusters)
+        kColours <- rgb(kMeans$centers[kMeans$cluster,])
+        
+        ggplot(data = imgRGB, aes(x = x, y = y)) + 
+ 
+                geom_point(colour = kColours) +
+                labs(title = paste("k-Means Clustering of", kClusters, "Colours")) +
+                xlab("x") +
+                ylab("y") + 
+                plotTheme()
+        
+}
+
+img_clust(kClusters = 2)
+img_clust(kClusters = 3)
+img_clust(kClusters = 4)
+img_clust(kClusters = 5)
+img_clust(kClusters = 6)
+
+```
+
+Convert to black and white to see what happens
+
+```{r}
+
+imgRGB <- imgRGB %>% rowwise %>% 
+        mutate(
+        luminBW = 0.21*R + 0.72*G + 0.07*B,
+        lightnessBW = (max(c(R, G, B)) + min(c(R, G, B))) / 2,
+        avBW = mean(c(R,G,B)),
+        extreme = max(c(R, G, B))
+)
+
+bw_func <- function(column = 'luminBW'){
+ggplot(data = imgRGB, aes(x = x, y = y)) + 
+  geom_point(aes_string(colour = column)) +
+  labs(title = "Original Image: Colorful Bird") +
+  xlab("x") +
+  ylab("y") +
+  plotTheme() +
+        scale_colour_gradient(low="black",high="white")
+}
+
+bw_func(column = 'luminBW')
+bw_func(column = 'lightnessBW')
+bw_func(column = 'avBW')
+bw_func(column = 'extreme')
+
+
+```
+
+
+
+
+
+
+
+
+
+
+

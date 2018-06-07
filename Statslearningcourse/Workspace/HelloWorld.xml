@@ -1,0 +1,30 @@
+<!DOCTYPE serializeddata>
+<operation plugin="www.csiro.au/workspace/builtin" label="Root" type="Workspace" bgcolor="4280839393" id="{1c9a3034-e562-4d0f-a0a1-a38b5bef1a83}" atomic="false">
+ <environment>
+  <platform>windows 64bit</platform>
+  <lastModified>2015-09-22T14:14:20</lastModified>
+  <plugin uri="www.csiro.au/workspace/packages/3.4.0/Windows/x86_64" name="www.csiro.au/workspace/builtin"/>
+ </environment>
+ <input name="Dependencies" size="0"/>
+ <operation plugin="www.csiro.au/workspace/builtin" label="String concatenator" type="StringsConcatenator" bgcolor="4284395451" id="{4a55d3d1-ebcd-4eea-9350-cd942f86f31a}">
+  <input name="Dependencies" size="0"/>
+  <input name="Strings" size="4">
+   <input index="0">Hello&amp;#160;</input>
+   <input index="1">People&amp;#160;</input>
+   <input index="2">of&amp;#160;</input>
+   <input index="3">Taswedja ga</input>
+  </input>
+  <input name="Accumulate across iterations">0</input>
+  <view x="-142" width="164" y="-135" height="185"/>
+ </operation>
+ <operation plugin="www.csiro.au/workspace/builtin" label="Log Text" type="LogText" bgcolor="4291187901" id="{8231179a-54d5-463e-a37a-0c8d9f0cf1f9}">
+  <input name="Dependencies" size="0"/>
+  <view x="-52" width="164" y="61" height="93"/>
+ </operation>
+ <operation plugin="www.csiro.au/workspace/builtin" label="Log Text dependency" datatype="CSIRO::DataExecution::Dependency" type="WorkspaceOutput" dataname="Log Text dependency" bgcolor="4294931456" id="{6c4041e5-01f5-4405-8b37-df44507acedb}" dataplugin="www.csiro.au/workspace/builtin">
+  <input name="Dependencies" size="0"/>
+  <view x="88" width="164" y="-79" height="93"/>
+ </operation>
+ <connection dest_name="Text to Log" to_op="{8231179a-54d5-463e-a37a-0c8d9f0cf1f9}" from_op="{4a55d3d1-ebcd-4eea-9350-cd942f86f31a}" copy="false" src_name="Concatenated String"/>
+ <connection dest_name="Log Text dependency" to_op="{6c4041e5-01f5-4405-8b37-df44507acedb}" from_op="{8231179a-54d5-463e-a37a-0c8d9f0cf1f9}" copy="false" src_name="Dependencies"/>
+</operation>

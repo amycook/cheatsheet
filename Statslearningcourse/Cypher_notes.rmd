@@ -1,0 +1,116 @@
+---
+title: "scope_list_prep.rmd"
+author: "Ames"
+date: "11/12/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+path = "/Users/yam/Library/Application Support/Neo4j Desktop/Application/neo4jDatabases/database-af510485-94dc-4b55-a6f0-52756215aa6d/installation-3.3.1/import"
+```
+
+```{r}
+
+scope_list = read.csv(paste(path, "scope_list.csv", sep = "/"))
+scope_list <- scope_list %>% select(Area, SubArea, System, FBSCode, Site, Module, SubModule) %>% unique
+write.csv(scope_list, paste(path, "scope_reduced2.csv",sep = "/"))
+
+scope_list %>% filter(SubModule == "Piping System-CS")
+
+```
+
+#Neo4j notes
+
+##create the graph
+
+CREATE (and DELETE) - create (and delete) nodes and relationships
+SET (and REMOVE) - Set values to properties and add labels on nodes using SET and REMOVE to remove them.
+MERGE - match existing, or create new nodes and patterns. useful with unique constraints.
+
+## query the graph
+
+MATCH - the graph pattern to match - most common way to get data out of a graph
+WHERE - adds constraints to a pattern
+RETURN - what to return
+
+## create a node
+
+CREATE (a:Artist { Name : "Strapping Young Lad" })
+
+creates a node with an 'Artist' label.
+Name is a property of the node.
+'a' is a variable name that we provide. Useful if you need to refer to it later in the same statement. The variable is restricted to a single statement. We did not use it in the statement above.
+
+CREATE (b:Album { Name : "Heavy as a Really Heavy Thing", Released : "1995" })
+RETURN b
+
+This node has two properties: Name, and Released.
+you return (display) the node using its variable name.
+
+CREATE (a:Album { Name: "Killers"}), (b:Album { Name: "Fear of the Dark"}) 
+RETURN a,b
+
+create multiple nodes by separating with a comma.
+
+MATCH (a:Artist),(b:Album)
+WHERE a.Name = "Strapping Young Lad" AND b.Name = "Heavy as a Really Heavy Thing"
+CREATE (a)-[r:RELEASED]->(b)
+RETURN r
+
+The statement above created a relationship. Note the variable names only apply in thsi statement, so you need to narrow down the available nodes using 'WHERE'.
+
+MATCH (a:Artist),(b:Album),(p:Person)
+WHERE a.Name = "Strapping Young Lad" AND b.Name = "Heavy as a Really Heavy Thing" AND p.Name = "Devin Townsend" 
+CREATE (p)-[pr:PRODUCED]->(b), (p)-[pf:PERFORMED_ON]->(b), (p)-[pl:PLAYS_IN]->(a)
+RETURN a,b,p
+
+These two statements are the same:
+MATCH (p:Person)
+WHERE p.Name = "Devin Townsend"
+RETURN p
+
+MATCH (p:Person {Name: "Devin Townsend"})
+RETURN p
+
+
+## Adding an index
+
+CREATE INDEX ON :Album(Name)
+
+This creates an index on the Name property of all nodes with the Album label.
+
+Indicies aren't required. It's good to create an index when you know there will be a lot of data on certain nodes.
+
+## using MERGE
+
+To use the existing nodes and relationships in the graph, MATCH or MERGE on the nodes or relationships first, and then MERGE in the pattern using the bound variables. Bound variables have been bound to nodes?
+
+MATCH (student:Student{id:123})
+MATCH (class:Class{name:'Cypher101'})
+MERGE (student)-[:ENROLLED_IN]->(class)
+
+MATCH (student:Student{id:123})
+MERGE (reportCard:ReportCard{term:'Spring2017'})
+MERGE (student)-[:EARNED]->(reportCard)
+
+the command above creates a report card sprinit2017 node and populates it with results for that student. That script will overwrite the same report card node for each subsequent student. The script below creates a new node for each report card for each student within the merge relationship def:
+
+MATCH (student:Student{id:123})
+MERGE (student)-[:EARNED]->(reportCard:ReportCard{term:'Spring2017'})
+
+
+Wrong - creates new FOR_TERM spring relationship each time:
+MATCH (student:Student{id:123})
+MATCH (spring:Term{name:'Spring2017'})
+MATCH (class:Class{name:'Cypher101'})
+MERGE (student)-[:ENROLLED_IN]->(class)-[:FOR_TERM]->(spring)
+
+right:
+MATCH (student:Student{id:123})
+MATCH (class:Class{name:'Cypher101'})-[:FOR_TERM]->(spring:Term{name:'Spring2017'})
+MERGE (student)-[:ENROLLED_IN]->(class)
+
+
+
+

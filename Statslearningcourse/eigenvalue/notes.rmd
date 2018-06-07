@@ -1,0 +1,29 @@
+---
+title: "Eigenvalues and vectors"
+output: html_notebook
+---
+
+
+
+# Overview
+
+* Eigenvectors and eigenvalues are numbers and vectors associated
+to square matrices, and together they provide the eigen-decomposition
+of a matrix which analyzes the structure of this matrix
+
+* simple expression for correlation/covariance matrices
+    * Eigendecomposition used to find max or min of functions
+        * e.g. eigendecomposition of a covaraince matrix = least squares est of original matrix
+        * used in PCA
+        
+$Au = \lambda u$
+where
+
+$$A = matrix \\
+\lambda = eigenvalue \\
+u = Eigenvector$$
+
+
+
+What is a cross product matrix?
+

@@ -1,0 +1,190 @@
+---
+        title: "R Notebook"
+output:
+        html_document: default
+html_notebook: default
+pdf_document: default
+word_document: default
+---
+        
+        # Topic
+        
+        Use twitteR package to load tweets with #cilantro and #coriander - a divisive topic.
+Analyse sentiments using __ package
+
+# Load packages etc.
+
+```{r}
+library(knitr)
+
+opts_chunk$set(fig.width=6.7, dpi = 300, warning = FALSE, message = FALSE, echo = TRUE)
+
+```
+
+```{r}
+library(devtools)
+# install.packages("ROAuth")
+# install.packages('httr')
+# devtools::install_github("geoffjentry/twitteR")
+library(twitteR)
+library(ROAuth) #for authentication with twitter server
+library(magrittr)
+library(dplyr)
+library(readr)
+
+#library of sentiments for words
+# install.packages('syuzhet')
+library(syuzhet)
+
+```
+
+# Create Twitter App
+
+I found all these steps from [rStatistics.net](http://rstatistics.net/extracting-tweets-with-r/)
+
+First, go to [https://apps.twitter.com/](https://apps.twitter.com/)
+
+Set up an app
+Click on Keys and Access Tokens tab
+record for later tweet uses:
+        
+```{r}
+keys <- read_csv("C:/Users/n9232371/OneDrive/shared files/Statslearningcourse/twitteR/keys.csv")
+
+```
+
+
+Authenticate via R:
+```{r}
+# setup_twitter_oauth(consumerKey, consumerSecret, accessToken, accessTokenSecret)
+
+setup_twitter_oauth(keys$key[1],
+                    keys$key[2],
+                    keys$key[3], 
+                    keys$key[4])
+
+```
+
+
+
+# Retrieve tweets
+
+I want any tweets that contain 'coriander' or 'cilantro'. Cilantro is American and they can be pretty opinionated :p
+
+## General Commands
+
+Before I retrieve mine, some example retrieving commands below:
+        
+Tweets from a user or your own account:
+
+```
+userTimeline('r_programming',n=10) # tweets from a user
+
+homeTimeline(n=15) # get tweets from home timeline
+
+mentions(n=15) # get your tweets that were retweeted
+
+favs <- favorites("r_programming", n =10) # tweets a user has favorited
+```
+
+Tweets with a particular hashtag 
+
+```
+tweets <- searchTwitter("rstats", n=25) # top 25 tweets that contain search term
+
+tweetsDF <- twListToDF(tweets) # more info about tweets - converts to nice df
+```
+
+## Back to the coriander problem:
+
+Extract tweets and convert to a nice dataframe:
+        
+```{r}
+
+tweets <- searchTwitter(c("coriander|cilantro"), 
+                        n=500, lang = "en") # top 25 tweets that contain search term
+head(tweets)
+
+# extract more info about tweets and convert to a nice df
+tweetsDF <- twListToDF(tweets) 
+
+tweetsDF <- tweetsDF %>% select(text, favorited, favoriteCount, created, retweetCount, retweeted, location, language, screenName)
+
+str(tweetsDF)
+
+```
+
+Clean up the text column to remove hashtags, urls, and punctuation
+
+```{r}
+text.clean <- function(x) {
+        
+        x = gsub('http\\S+\\s*', '', x) ## Remove URLs
+        
+        x = gsub('\\b+RT', '', x) ## Remove RT
+        
+        x = gsub('#', '', x) ## Remove Hashtags
+        
+        x = gsub('@\\S+', '', x) ## Remove Mentions
+        
+        x = gsub('[[:cntrl:]]', '', x) ## Remove Controls and special characters
+        
+        x = gsub('[,.:;+-]', ' ', x) ## space replaces some Punctuation
+        
+        x = gsub('[[:punct:]]', '', x) ## Remove Punctuations
+        
+        x = gsub("^[[:space:]]*","",x) ## Remove leading whitespaces
+        
+        x = gsub("[[:space:]]*$","",x) ## Remove trailing whitespaces
+        
+        x = gsub(' +',' ',x) ## Remove extra whitespaces
+        
+        return(x)
+        
+}
+
+#before cleaning
+head(tweetsDF$text)
+tweetsDF$text <- text.clean(tweetsDF$text)
+
+#after cleaning
+head(tweetsDF$text)
+
+```
+
+
+# Sentiment Analysis
+
+I lifted this code from a blog by Julia Silge [http://juliasilge.com/blog/Joy-to-the-World/](http://juliasilge.com/blog/Joy-to-the-World/)
+
+She uses the 'syuzhet' package developed in Stanford by Saif Mohammad and Peter Turney. They used the NRC Word-Emotion Association Lexicon to build a dictionary of words with scores for eight different emotions and two sentiments. Not every English word is included because most are neutral.
+
+## Example Single Tweet
+
+Let's look at an example tweet:
+
+```{r}
+get_nrc_sentiment("Sprinkling some Cilantro on what looks to be the perfect Gyro Gyro eatfresh eatlocal STL foodie eeeeeats")
+
+by.word <- data_frame("token" = get_tokens("Sprinkling some Cilantro on what looks to be the perfect Gyro Gyro eatfresh eatlocal STL foodie eeeeeats"))
+by.word <- cbind(by.word, get_nrc_sentiment(by.word$token))
+
+#filter for rows with entries greater than 0:
+by.word[rowSums(by.word %>% select(-token)) != 0,]
+
+```
+
+## Apply sentiment analysis to all tweets
+
+Must first remove emoticons!
+
+Lifted from here:
+http://opiateforthemass.es/articles/emoticons-in-R/
+
+
+```{r}
+
+sents = get_nrc_sentiment(tweetsDF$text)
+
+```
+

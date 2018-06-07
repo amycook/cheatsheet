@@ -1,0 +1,54 @@
+---
+title: "Types_LinReg"
+author: "Amy"
+date: "5 March 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Strengths and differences - Linear Regression
+
+
+## Partial Least Squares
+
+* main purpose of partial least squares regression is to build a linear model, Y=XB+E, where Y is an n cases by m variables response matrix, X is an n cases by p variables predictor matrix
+    * usually Y and X are scaled - subtract mean and divide by SD
+    
+ * produce factor scores as linear combinations of the original predictor variables (like PCA) so there is no correlation between factor score vars
+ 
+ * difference between PCA is that PLS produces the weight matrix, W, reflecting covariance structure between predictor and response vars. PCA does not have a response.
+ 
+* least restrictive of various multivariate linear regression models. Can use when there are fewer observations than predictor variables. 
+
+* Popular to use to narrow down variables and identify outliers.
+
+## Discriminant Analysis
+
+* Very similar to ANOVA
+* basic underlying idea is to determine whether groups differ with regard to the mean of a variable. Then use that variable to predict group membership. 
+* the final significance test of whether or not a variable discriminates between groups is the F test. F is ratio of between groups variance over the pooled average withini group variance.
+
+* Forward Stepwise DA:
+    * at each step - all variables are reviewed and evaluated to determine which will contribute most to discrimination. The variable is then chosen and the process starts again.
+
+* Backward Stepwise DA:
+    * Start with all the vars. At each step - the var that contributes least is eliminated.
+
+* Two processes guided by F values. F values measures stat significance in discrimination. F values are thresholds enter and remove from the model.
+
+* Note: stepwise procedures capitalise on chance because they pick and choose variables to yield max discrimination. Don't take the p-values at face value necessarily
+
+* More than 2 groups: say 3 for example. NEed 3 functions to differentiate between: 1 and 2, 1 and 3, and 2 and 3.
+    * can automatically determine an optimal combo of variables so that the first function provides most discrim between groups. Second provides second most etc. Functions will be independent (orthogonal) 
+    * use Factor structure matrix to determine which vars are important.
+        * factor structure coefficients: correlations between vars in model and functions.
+
+
+
+
+
+
+

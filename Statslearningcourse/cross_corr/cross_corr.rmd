@@ -1,0 +1,87 @@
+---
+title: "cross_corr"
+author: "Amy"
+date: "6 April 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r load_data}
+
+
+library(stats)
+
+gym <- read.csv("C:/Users/cook79166/OneDrive/shared files/Statslearningcourse/cross_corr/data.csv")
+
+head(gym)
+
+```
+
+Is there a correlation between the change in temp every 10 minutes and the number of people in the gym?
+
+## Stationarity
+
+First test for stationarity:
+ADF and KPSS tests
+
+```{r}
+
+plot(gym$number_people)
+plot(gym$temperature)
+
+library(tseries)
+adf.test(gym$number_people)
+adf.test(gym$temperature)
+kpss.test(gym$number_people)
+kpss.test(gym$temperature)
+
+# appears to be a trend, so take the difference of the series
+
+diff_np <- diff(gym$number_people)
+diff_temp <- diff(gym$temperature)
+adf.test(diff_np)
+adf.test(diff_temp)
+kpss.test(diff_np)
+kpss.test(diff_temp)
+
+acf(diff_np)
+acf(diff_temp)
+```
+
+Cross correlation
+
+```{r}
+
+a <- ccf(diff_np, diff_temp)
+a
+
+```
+
+Highest correlations at -39 and 0.
+
+Run regressions on these
+
+```{r}
+
+# lag = 0
+reg1<-lm(diff_np ~ diff_temp)
+summary(reg1)
+
+# test 
+library(lmtest)
+dwtest(reg1)
+
+# lag = 39
+yplus39 = tail(diff_np, 62144)
+reg2<-lm(yplus39~diff_temp[1:62144])
+summary(reg2)
+dwtest(reg2)
+```
+
+Therefore, lag = 0 had the best predictive model.
+
+

@@ -1,0 +1,45 @@
+VBA notes
+
+# Variable Types
+
+As Integer
+  * range limit of -32768:32767
+  * whole numbers only
+As Long
+  * range limit -2 trillion:2 trillion
+  * whole numbers only	
+As Single
+  * holds 4 bytes of data
+As Double
+  * holds 8 bytes of data
+As Currency
+
+# Logical Statements
+= tests if it is equal to (not ==)
+<> tests not equal (instead of !=)
+
+Not instead of !
+  * Not varA = 2
+And for & 
+Or for OR
+
+# String Commands
+InStr returns the position of the string you are searching for 
+InStrRev returns the position of the string counting from the end of the string.
+replace() function instead of sub() or gsub()
+Left() and Right() - subset out the left most __ chars (9 for example) or right most __chars	
+Mid() function like substr(). Tell it which char to start at, and how many char's to take.
+
+key comared to R
+  * & pastes two objects next to each other when you print it out in a message box or something 
+  * vectors are called arrays. Array(4) is a vector with 5 values.
+    * arrays can have up to 60 dimensions - unlike vectors. hmmm. 
+  * Join() same as paste()
+  * to access base functions use WorksheetFunction.Sum() for example
+
+# Referring to cells in Excel
+Range("A1:A6")
+Cells.Item(Row, Column)
+Cells.Item(1, 1)
+Cells.Item(1, "A")
+

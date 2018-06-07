@@ -1,0 +1,161 @@
+<!DOCTYPE serializeddata>
+<operation label="Root" type="Workspace" atomic="false" bgcolor="4280839393" plugin="www.csiro.au/workspace/builtin" id="{089b1232-a0b6-4e37-b422-0ce945edc0cf}">
+ <environment>
+  <platform>windows 64bit</platform>
+  <lastModified>2015-09-22T16:18:46</lastModified>
+  <plugin uri="www.csiro.au/workspace/packages/3.4.0/Windows/x86_64" name="www.csiro.au/workspace/dataanalysis"/>
+  <plugin uri="www.csiro.au/workspace/packages/3.4.0/Windows/x86_64" name="www.csiro.au/workspace/builtin"/>
+ </environment>
+ <input name="Dependencies" size="0"/>
+ <displays>
+  <widgetwindow floating="false" docklocation="2">
+   <iobase wsDataPath="wsDataPath:{4c4f5084-2a92-46ac-b4b4-2eefdf172006}:output:Plot Image"/>
+   <displaywidget displayWidgetName="CSIRO::DataAnalysis::ImageWidget"/>
+   <geometry>AdnQywABAAAAAAAAAAAAHwAAASQAAADyAAAAAAAAAB8AAAEkAAAA8gAAAAAAAA==</geometry>
+   <properties>
+    <property name="image" value=""/>
+    <property name="keepLast" value="true"/>
+    <property name="collapseInIOTree" value="true"/>
+   </properties>
+  </widgetwindow>
+ </displays>
+ <operation label="CSV reader" type="CsvReader" bgcolor="4284395451" plugin="www.csiro.au/workspace/dataanalysis" id="{5cee388b-16f6-4779-9834-dd0eab9d088f}">
+  <input name="Dependencies" size="0"/>
+  <input globalname="idontknow" name="File name" preferredwidget="Custom .ui file">C:/Program Files/csiro.au/workspace/doc/Workspace/Examples/plotsample.csv</input>
+  <input name="Delimiter">,</input>
+  <input name="Column formatting">1</input>
+  <input name="Skip top # lines">0</input>
+  <view y="-187.5" height="110" x="-402" width="164"/>
+ </operation>
+ <operation label="Get number column" type="GetItemFromCollection" datatype="QVector&lt;double>" dataplugin="www.csiro.au/workspace/builtin" bgcolor="4284395451" dataname="Column" plugin="www.csiro.au/workspace/dataanalysis" id="{f1af454d-3b5a-47a0-9bae-74b7631f1183}">
+  <input name="Dependencies" size="0"/>
+  <input name="Item name">number</input>
+  <view y="-287.5" height="110" x="-132" width="164"/>
+ </operation>
+ <operation label="Get area column " type="GetItemFromCollection" datatype="QVector&lt;double>" dataplugin="www.csiro.au/workspace/builtin" bgcolor="4284395451" dataname="Column" plugin="www.csiro.au/workspace/dataanalysis" id="{af552411-d6d2-49f6-ac9d-c5dd903ff1a9}">
+  <input name="Dependencies" size="0"/>
+  <input name="Item name">area</input>
+  <view y="-57.5" height="110" x="-132" width="164"/>
+ </operation>
+ <operation label="Plot builder dependency" type="WorkspaceOutput" datatype="CSIRO::DataExecution::Dependency" dataplugin="www.csiro.au/workspace/builtin" bgcolor="4294931456" dataname="Plot builder dependency" plugin="www.csiro.au/workspace/builtin" id="{d84701c7-bda2-4f53-8afa-79be7a3a1159}">
+  <input name="Dependencies" size="0"/>
+  <view y="-159" height="93" x="468" width="164"/>
+ </operation>
+ <operation label="Plot builder" type="PlotBuilder" bgcolor="4284395451" plugin="www.csiro.au/workspace/dataanalysis" id="{e43cc299-2bac-43cf-92b8-e342ded0c542}">
+  <input name="Dependencies" size="0"/>
+  <input name="Frame margin left">100</input>
+  <input name="Frame margin top">75</input>
+  <input name="Frame margin right">25</input>
+  <input name="Frame margin bottom">100</input>
+  <input rgba="4294967295" name="Background color"/>
+  <input rgba="4278190080" name="Foreground color"/>
+  <input name="Title font">Sans Serif,14,-1,5,50,0,0,0,0,0</input>
+  <input name="Legend font">Sans Serif,10,-1,5,50,0,0,0,0,0</input>
+  <input name="Axes label font">Sans Serif,14,-1,5,50,0,0,0,0,0</input>
+  <input name="Axes tick label font">Sans Serif,11,-1,5,50,0,0,0,0,0</input>
+  <input name="Axes line width">1</input>
+  <input name="Major tick length">5</input>
+  <input name="Minor tick length">2</input>
+  <input name="X axis settings">
+   <Auto_minimum>1</Auto_minimum>
+   <Auto_maximum>1</Auto_maximum>
+   <Minimum>0</Minimum>
+   <Maximum>0</Maximum>
+   <Scale_type>0</Scale_type>
+   <Label></Label>
+   <Number_major_ticks>5</Number_major_ticks>
+   <Number_minor_ticks>0</Number_minor_ticks>
+   <Show_major_ticks>1</Show_major_ticks>
+   <Show_minor_ticks>0</Show_minor_ticks>
+   <Show_grid_lines>0</Show_grid_lines>
+   <Show_tick_labels>1</Show_tick_labels>
+   <Tick_label_number_format>0</Tick_label_number_format>
+   <Tick_label_precision>1</Tick_label_precision>
+   <Use_tight_auto_limits>1</Use_tight_auto_limits>
+   <Custom_tick_labels/>
+  </input>
+  <input name="Y axis settings">
+   <Auto_minimum>1</Auto_minimum>
+   <Auto_maximum>1</Auto_maximum>
+   <Minimum>0</Minimum>
+   <Maximum>0</Maximum>
+   <Scale_type>0</Scale_type>
+   <Label></Label>
+   <Number_major_ticks>5</Number_major_ticks>
+   <Number_minor_ticks>0</Number_minor_ticks>
+   <Show_major_ticks>1</Show_major_ticks>
+   <Show_minor_ticks>0</Show_minor_ticks>
+   <Show_grid_lines>0</Show_grid_lines>
+   <Show_tick_labels>1</Show_tick_labels>
+   <Tick_label_number_format>0</Tick_label_number_format>
+   <Tick_label_precision>1</Tick_label_precision>
+   <Use_tight_auto_limits>1</Use_tight_auto_limits>
+   <Custom_tick_labels/>
+  </input>
+  <input name="Show legend">1</input>
+  <input name="Legend anchor">0</input>
+  <input name="Legend offset X">10</input>
+  <input name="Legend offset Y">10</input>
+  <input name="Data line width">1</input>
+  <input name="Distance between labels">15</input>
+  <input name="Enable dynamic margins">0</input>
+  <input name="Use OpenGL based rendering">0</input>
+  <input name="Number of OpenGL samples">4</input>
+  <input name="Image overlays" size="0"/>
+  <input name="Plot items" size="1"/>
+  <input name="Plots" size="0"/>
+  <output globalname="plot" name="Plot" preferredwidget="CSIRO::DataAnalysis::PlotWidget"/>
+  <view y="-430.5" height="636" x="268" width="164"/>
+ </operation>
+ <operation label="Plot item builder" type="PlotItemBuilder" bgcolor="4284395451" plugin="www.csiro.au/workspace/dataanalysis" id="{57ad5dde-2bac-4112-bd8d-f659b9f9c7ce}">
+  <input name="Dependencies" size="0"/>
+  <input name="Enabled">1</input>
+  <input name="Color mode">0</input>
+  <input rgba="4278255487" globalname="color" name="Color" preferredwidget="CSIRO::Widgets::ColorButton"/>
+  <input name="Color scale">
+   <Minimum>0</Minimum>
+   <Maximum>1</Maximum>
+   <Spectrum>
+    <point rgba="4278190335" value="0"/>
+    <point rgba="4278255615" value="0.25"/>
+    <point rgba="4278255360" value="0.5"/>
+    <point rgba="4294967040" value="0.75"/>
+    <point rgba="4294901760" value="1"/>
+   </Spectrum>
+  </input>
+  <input name="Line mode">0</input>
+  <input name="Line style">1</input>
+  <input name="Line type">0</input>
+  <input name="Glyph">0</input>
+  <input name="Include in legend">1</input>
+  <input name="Anti-alias">1</input>
+  <input name="Render plot line">1</input>
+  <view y="-299.5" height="374" x="88" width="164"/>
+ </operation>
+ <operation label="Build Plot Image" type="PlotImageBuilder" bgcolor="4284395451" plugin="www.csiro.au/workspace/dataanalysis" id="{4c4f5084-2a92-46ac-b4b4-2eefdf172006}">
+  <input name="Dependencies" size="0"/>
+  <input name="Width">640</input>
+  <input name="Height">480</input>
+  <input rgba="4294902015" name="Background color"/>
+  <output name="Plot Image" preferredwidget="CSIRO::DataAnalysis::ImageWidget"/>
+  <view y="12.5" height="110" x="268" width="164"/>
+ </operation>
+ <operation label="Image writer" type="ImageWriter" bgcolor="4284395451" plugin="www.csiro.au/workspace/dataanalysis" id="{cc527123-fa99-45bf-bf83-1963d243f8ac}">
+  <input name="Dependencies" size="0"/>
+  <input globalname="outfile" name="File name" preferredwidget="Custom .ui file">C:/Users/n9232371/OneDrive/shared files/Statslearningcourse/Workspace/sample.png</input>
+  <view y="21" height="93" x="448" width="164"/>
+ </operation>
+ <operation label="Image writer dependency" type="WorkspaceOutput" datatype="CSIRO::DataExecution::Dependency" dataplugin="www.csiro.au/workspace/builtin" bgcolor="4294931456" dataname="Image writer dependency" plugin="www.csiro.au/workspace/builtin" id="{51222e60-7cc8-4bf3-b6a1-f9d77489b7f1}">
+  <input name="Dependencies" size="0"/>
+  <view y="21" height="93" x="688" width="164"/>
+ </operation>
+ <connection copy="false" dest_name="Data collection" src_name="CSV file data" to_op="{f1af454d-3b5a-47a0-9bae-74b7631f1183}" from_op="{5cee388b-16f6-4779-9834-dd0eab9d088f}"/>
+ <connection copy="false" dest_name="Data collection" src_name="CSV file data" to_op="{af552411-d6d2-49f6-ac9d-c5dd903ff1a9}" from_op="{5cee388b-16f6-4779-9834-dd0eab9d088f}"/>
+ <connection copy="false" dest_name="Plot items" src_name="Plot item" dest_index="0" to_op="{e43cc299-2bac-43cf-92b8-e342ded0c542}" from_op="{57ad5dde-2bac-4112-bd8d-f659b9f9c7ce}"/>
+ <connection copy="false" dest_name="Source X" src_name="Column" to_op="{57ad5dde-2bac-4112-bd8d-f659b9f9c7ce}" from_op="{f1af454d-3b5a-47a0-9bae-74b7631f1183}"/>
+ <connection copy="false" dest_name="Source Y" src_name="Column" to_op="{57ad5dde-2bac-4112-bd8d-f659b9f9c7ce}" from_op="{af552411-d6d2-49f6-ac9d-c5dd903ff1a9}"/>
+ <connection copy="false" dest_name="Plot builder dependency" src_name="Dependencies" to_op="{d84701c7-bda2-4f53-8afa-79be7a3a1159}" from_op="{e43cc299-2bac-43cf-92b8-e342ded0c542}"/>
+ <connection copy="false" dest_name="Plot" src_name="Plot" to_op="{4c4f5084-2a92-46ac-b4b4-2eefdf172006}" from_op="{e43cc299-2bac-43cf-92b8-e342ded0c542}"/>
+ <connection copy="false" dest_name="Image" src_name="Plot Image" to_op="{cc527123-fa99-45bf-bf83-1963d243f8ac}" from_op="{4c4f5084-2a92-46ac-b4b4-2eefdf172006}"/>
+ <connection copy="false" dest_name="Image writer dependency" src_name="Dependencies" to_op="{51222e60-7cc8-4bf3-b6a1-f9d77489b7f1}" from_op="{cc527123-fa99-45bf-bf83-1963d243f8ac}"/>
+</operation>

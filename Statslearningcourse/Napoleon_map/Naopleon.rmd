@@ -1,0 +1,139 @@
+---
+title: "Napoleon_tutorial"
+author: "Ames"
+date: "25/08/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+library(ggmap)
+library(ggrepel)
+library(gridExtra)
+library(pander)
+
+setwd('/Users/yam/OneDrive/shared files/Statslearningcourse/Napoleon_map/ggplot2-minard-gallery')
+cities <- read.table("cities.txt",
+                     header = TRUE, stringsAsFactors = FALSE)
+
+troops <- read.table("troops.txt",
+                     header = TRUE, stringsAsFactors = FALSE)
+
+temps <- read.table("temps.txt",
+                    header = TRUE, stringsAsFactors = FALSE) %>%
+  mutate(date = dmy(date))  # Convert string to actual date
+
+```
+
+Minard's plot in ggplot 
+
+```{r}
+
+ggplot(troops, aes(y = lat,x = long)) + 
+    geom_path(aes(size = survivors, group = group, colour = direction), lineend = "round") +
+    scale_size(range = c(0.5, 7)) +
+    # coord_fixed(ratio = 1) +
+    scale_colour_manual(values = c("#DFC17E", "#252523")) +
+    geom_point(data = cities, aes(y = lat, x = long), size = 0.5, colour = "#DC5B44") +
+    geom_text_repel(data = cities, aes(y = lat, x = long, label = city), 
+              size = 3, colour = "#DC5B44")
+
+
+
+```
+
+try and make in leaflet 
+
+```{r pressure, echo=FALSE}
+
+march.1812.europe <- c(left = -13.10, bottom = 35.75, right = 41.04, top = 61.86)
+
+# "zoom" ranges from 3 (continent) to 21 (building)
+# "where" is a path to a folder where the downloaded tiles are cached
+march.1812.europe.map <- get_stamenmap(bbox = march.1812.europe, zoom = 5,
+                                       maptype = "watercolor", where = "cache")
+march.1812.ne.europe <- c(left = 23.5, bottom = 53.4, right = 38.1, top = 56.3)
+
+march.1812.ne.europe.map <- get_stamenmap(bbox = march.1812.ne.europe, zoom = 8,
+                                          maptype = "watercolor", where = "cache")
+march.1812.ne.europe.map <- get_googlemap(center = c(30.8, 54.85), zoom = 1,
+                                          maptype = "roadmap", where = "cache")
+
+ggmap(march.1812.ne.europe.map, extent = 'device') + 
+        geom_path(data = troops, aes(y = lat, x = long, size = survivors, 
+                                             group = group, colour = direction), lineend = "round") +
+            scale_size(range = c(0.5, 7)) +
+            # coord_fixed(ratio = 1) +
+            scale_colour_manual(values = c("#DFC17E", "#252523")) +
+            geom_point(data = cities, aes(y = lat, x = long), size = 0.5, colour = "#DC5B44") +
+            geom_text_repel(data = cities, aes(y = lat, x = long, label = city), 
+                      size = 3, colour = "dark red") +
+                theme_nothing()        
+
+
+```
+
+
+```{r}
+library(devtools)
+devtools::install_github("dkahle/ggmap")
+install_github("hadley/ggplot2@v2.2.0")
+library(ggmap)
+library(ggplot2)
+
+baylor <- "baylor university"
+qmap(location = "boston university", zoom = 14)
+
+qmap("brisbane", zoom = 14, source = "stamen")    
+
+trade.map <- get_googlemap(center = c(30.8, 0), zoom = 2,
+                                          maptype = "roadmap", where = "cache")
+
+user_input = data.frame('from' = c('cote divore', 'ghana', 'nigeria'),
+               'to' = c('england','england', 'england'),
+               'vol' = c(1500,800, 367))
+
+seg_1 <- data.frame('lat' = c(50.37, 47.73, 38.93, 23.53, 7.67, 2.13),
+                    'lon' = c(-4.255, -21.24, -30.56, -35.66, -30.56, -10.04))
+seg_2 <- data.frame('lat' = c(2.13, 5.316),
+                    'lon' = c(-10.04, -4.03))
+seg_3 <- data.frame('lat' = c(2.13, 4.88),
+                    'lon' = c(-10.04, -1.74))
+seg_4 <- data.frame('lat' = c(2.13, 4.34),
+                    'lon' = c(-10.04, 6.99))
+
+cocoa = matrix(data = c(1,1,0,0,1,0,1,0,1,0,0,1),
+               ncol = 3,
+               dimnames = list(c('seg_1','seg_2','seg_3','seg_4'),
+                               c('cot_eng', 'gha_eng','nigeria_eng')))
+vol = matrix(user_input$vol, ncol = 1,
+             dimnames = list(c('cot_eng', 'gha_eng', 'nigeria_eng'),
+                               c('vol')))
+master_vols = (cocoa %*% vol) %>% as.data.frame
+
+master = bind_rows(list('seg_1' = seg_1,
+                        'seg_2' = seg_2,
+                        'seg_3' = seg_3,
+                        'seg_4' = seg_4), .id = "id")
+master= master %>% left_join(master_vols %>% rownames_to_column, by = c("id" = "rowname"))
+
+# cocoa_s = spline(cocoa, method = "natural") %>% as.data.frame
+# names(cocoa_s) = c('lat','lon')
+
+ggmap(trade.map, extent = 'device') + 
+        geom_path(data = master, aes(y = lat, 
+                                    x = lon,
+                                    size = vol,
+                                    group = id),
+                  colour = "darkblue", linejoin = "round",
+                  lineend = "round") +
+            scale_size(range = c(1.5, 4)) +
+            # coord_fixed(ratio = 1) +
+            scale_colour_manual(values = c("#DFC17E", "#252523")) +
+                theme_nothing()  
+```
+
+

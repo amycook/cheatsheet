@@ -1,0 +1,67 @@
+---
+title: "Amy gives it a go"
+output: html_notebook
+---
+
+The task is about doing a binary regression on loan data. The students are going to create a model that will predict loan default ("charge off" in the data). The basic workflow is to join those data files, clean them, create the response, do some variable selection and then fit a binomial regression for loan default 0-1. I find model I arrived at using stepwise regression, although I don't seem to have included that step.
+
+I'm interested in your thoughts on how hard this might be. 
+
+```{r}
+#packages
+library(ggplot2)
+library('dplyr')
+library(magrittr)
+library('purrr')
+library('knitr')
+library('readr')
+
+opts_chunk$set(fig.width=6.7, dpi = 300, warning = FALSE, message = FALSE, echo = FALSE, warning = FALSE)
+
+# detect OS
+if(.Platform$OS.type == 'windows'){
+        setwd("~/OneDrive/shared files/Statslearningcourse/Miles_assignment")
+        opts_knit$set(root.dir= "~/OneDrive/shared files/Statslearningcourse/Miles_assignment")
+}
+
+
+
+```
+
+Load data and investigate
+
+```{r load_data}
+
+hist <- read.csv("CUSTOMER_LOAN_HISTORY.csv", na.strings = c("NA",""))
+loans <- read.csv("CUSTOMER_LOAN.csv", na.strings = c("NA",""))
+
+dim(hist)
+summary(hist)
+
+#think I can join with member_id, maybe id?
+# quite a few crazy collection_recovery_fee and last_pymnt_amnt
+# many columns of only NA
+# why are there so many blank 'next_pymnt_d'? 
+# 'next_pymt_d' has blanks instead of NA - maybe reload files setting blanks to NA
+
+head(hist$application_type)
+
+# delete columns that are all the same value
+notNA <- map_lgl(hist, function(x) table(x, exclude = NULL)[1] != nrow(hist))
+hist<- hist[,notNA]
+
+#investigate rows with 9999.000
+ggplot(hist, aes(x= "potato",y = delinq_2yrs)) + geom_boxplot()
+hist %>% filter(delinq_2yrs> 7500)
+
+hist <- hist %>% filter(delinq_2yrs< 7500)
+
+#still some weirdly big numbers in mths_since_last_delinq
+ggplot(hist, aes(x= "potato",y = mths_since_last_delinq)) + geom_boxplot()
+hist %>% filter(mths_since_last_delinq > 750)
+hist <- hist %>% filter(mths_since_last_delinq < 750)
+
+
+
+```
+

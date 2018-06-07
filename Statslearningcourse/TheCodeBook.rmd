@@ -1,0 +1,36 @@
+---
+title: "The Code Book"
+author: "Amy Cook"
+date: "Friday, January 30, 2015"
+output: word_document
+---
+
+```{r function, echo=FALSE,include=FALSE}
+source('invert.R')
+
+```
+# Contents
+
+1. Code Book - Describes each variable and their units
+2. Information about the summary choices you made
+3. Information about the experimental study design you used
+4. Study Design - thorough description of how you collected the data
+    a. include what variables you excluded
+5. The instruction list
+    a. a computer script in R
+    b. the output is the processed data
+
+
+__
+
+#4. Study Design
+    a. loaded raw .csv file
+    b. replaced column titles with this vector of column names `r columns`
+    c. replaced all values such as 'Not recorded' or '*' with NA
+    d. Variables to delete right away: variables with one level only
+        * AC.Person - all Melissa Thomas
+        * AC.Institute - all Curtin University
+        * AC.Info - 4 levels only, which change every second Construction ID
+        * AC.Link - 4 levels only, which change every second Construction ID
+    e. Concatenated first 3 columns into one. The first three columns had 8 levels total describing the 8 construction surveillance times. Saved a summary of these as 'AC.summary.csv'
+

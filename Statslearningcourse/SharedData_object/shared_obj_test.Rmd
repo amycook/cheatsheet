@@ -1,0 +1,42 @@
+---
+title: "Untitled"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library('plotly')
+library(crosstalk)
+library(R6)
+library(ggplot2)
+library(stringr)
+library(dplyr)
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+```{r}
+# create shared Data object
+mtcars$model <- rownames(mtcars)
+mtcars$brand <- rownames(mtcars) %>% str_split(" ", simplify = T) %>% .[,1]
+car <- SharedData$new(mtcars)
+
+```
+
+### Chart A
+
+```{r}
+
+p <- ggplotly(ggplot(car, aes(x = brand, y = mpg, colour = brand)) + geom_point())
+q <- ggplotly(ggplot(car, aes(x = cyl,y = hp)) + geom_point())
+
+
+subplot(p, q, widths = c(.5,.5)) %>% 
+    highlight(on = "plotly_selected")
+
+```
+
+
