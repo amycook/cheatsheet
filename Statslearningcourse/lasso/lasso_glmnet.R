@@ -23,12 +23,17 @@ predict(fit,newx=nx,s=c(0.1,0.05))
 #cross validation
 cvfit = cv.glmnet(x, y, nfolds = 10)
 plot(cvfit)
+plot(cvfit$glmnet.fit, "lambda",   label=TRUE)
 
 # vertical lines
 #lambda of left hand line - min MSE
 cvfit$lambda.min
 #coef of left hand line model
 coef(cvfit, s = "lambda.min")
+# coef in dataframe:
+coef(cvfit, s = "lambda.min") %>% as.matrix %>% as.data.frame %>% rownames_to_column %>% filter(`1` < 0 | `1` > 0) %>% 
+    arrange(-abs(`1`))
+
 # predict with min lambda
 predict(cvfit, newx = x[1:5,], s = "lambda.min")
 # right hand line is 'lambda.1se', or 1 standard error above lambda min
