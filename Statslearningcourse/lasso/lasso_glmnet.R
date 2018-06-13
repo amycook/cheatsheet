@@ -4,6 +4,11 @@ library(glmnet)
 
 data(QuickStartExample)
 
+# to convert a dataframe to matrix:
+mf <- model.frame(Act_Cu_Rec ~. -rowname, data=r)
+y = model.response(mf)
+x = model.matrix(Act_Cu_Rec ~. -rowname, mf)
+
 fit <- glmnet(x,y)
 plot(fit, label = TRUE)
 print(fit)
