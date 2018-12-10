@@ -1,0 +1,69 @@
+---
+title: "starwars_analysis"
+author: "Ames"
+date: "30/06/2018"
+output:
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning = F, message = F)
+
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(kableExtra)
+library(ggrepel)
+```
+
+
+
+```{r save reload}
+sw <- starwars[,c(1:10)]
+write.csv(sw, "/Users/yam/Documents/github/cheatsheet/Statslearningcourse/teaching/SW.csv",
+          row.names = F)
+
+sw <- read.csv("/Users/yam/Documents/github/cheatsheet/Statslearningcourse/teaching/SW.csv",
+               na.strings = c("NA", "None"))
+
+head(sw) %>% rename("skin~colour~" = skin_color) %>% 
+    kable() %>% kable_styling()
+
+```
+
+# Exploratory Plots
+
+```{r, fig.height = 7}
+sw %>% 
+    filter(!is.na(birth_year)) %>% 
+    ggplot(aes(y = height, x = birth_year)) + 
+    geom_point() +
+    theme_economist() +
+    theme(plot.caption = element_text(hjust = -.1)) +
+    labs(title = "Age vs. Height",
+         subtitle = bquote(From~.(nrow(sw %>% filter(!is.na(birth_year))))~characters),
+         caption = "testing, celebrating this success",
+         x = quote(Age*", "*n[y]),
+         y = "Height, cm") +
+    facet_wrap(~eye_color) +
+    geom_text_repel(data = sw %>% filter(name == "Yoda"), aes(label = name))
+
+```
+
+# Regression
+
+## Linear Regression
+
+Predict mass of starwars character based on all other variables
+
+```{r}
+ 
+fit.lm1 <- lm(mass ~ . - name, data = sw)
+
+fit.lm1
+
+```
+
+
+

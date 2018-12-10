@@ -1,0 +1,642 @@
+---
+title: "forecast_notes"
+author: "Ames"
+date: "08/09/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Simple exponential smoothing
+
+Use ses() to forecast the next 10 years of winning times
+alpha value is automatically calculated using least squares
+alpha indicates how much weight is given to the first term and subsequent terms
+
+```{r cars}
+fc <- ses(marathon, h = 10)
+
+# Use summary() to see the model parameters
+summary(fc)
+
+# Use autoplot() to plot the forecasts
+autoplot(fc)
+
+# Add the one-step forecasts for the training data to the plot
+autoplot(fc) + autolayer(fitted(fc))
+```
+
+## Compare naive to ses
+
+
+```{r pressure, echo=FALSE}
+# Create a training set using subset()
+train <- subset(marathon, end = length(marathon) - 20)
+
+# Compute SES and naive forecasts, save to fcses and fcnaive
+fcses <- ses(train, h = 20)
+fcnaive <- naive(train, h = 20)
+
+# Calculate forecast accuracy measures
+accuracy(fcses, marathon)
+accuracy(fcnaive, marathon)
+
+# Save the best forecasts as fcbest
+fcbest <- fcnaive
+```
+
+# SES and trends and seasonality
+
+SES by itself does not work well with trends and seasonality
+Holt's linear trend - allows for local linear trends in exponential smoothing
+Has a slope component that changes over time.
+beta* parameter controls how much you allow the slope to change over the series
+
+Holt's method projects the same trend indefinitely into the future 
+    * you can dampen the trend 'damped trend method'
+        * short term forecasts are trended, long term are constant
+
+```{r}
+
+# Produce 10 year forecasts of austa using holt()
+fcholt <- holt(austa, h=10)
+
+# Look at fitted model using summary()
+summary(fcholt)
+
+# Plot the forecasts
+autoplot(fcholt)
+
+# Check that the residuals look like white noise
+checkresiduals(fcholt)
+
+```
+
+Holt's student, Winters, added seasonality to his method
+
+seasonality can be additive or multiplicative
+
+```{r}
+# Plot the data
+autoplot(a10)
+
+# Produce 3 year forecasts
+fc <- hw(a10, seasonal = "multiplicative", h = 36)
+
+# Check if residuals look like white noise
+checkresiduals(fc)
+whitenoise <- FALSE
+
+# Plot forecasts
+autoplot(fc)
+```
+
+compare holt winters to naive
+
+Three possible trends: none, additive, additive damped
+Three possible seasonal: none, additive, multiplicative
+
+```{r}
+# Create training data with subset()
+train <- subset(hyndsight, end = length(hyndsight) - 4*7)
+
+# Holt-Winters additive forecasts as fchw
+fchw <- hw(train, seasonal = "additive", h = 28)
+
+# Seasonal naive forecasts as fcsn
+fcsn <- snaive(train, h = 28)
+
+# Find better forecasts with accuracy()
+accuracy(fchw, hyndsight)
+accuracy(fcsn, hyndsight)
+
+# Plot the better forecasts
+autoplot(fchw)
+```
+
+# State Space Models
+
+Errors: Additive or multiplicative
+
+ETS models - error, trend, seasonal models
+Noise increases with the level of the series.
+Alternative to SES models
+    * Can use maximum liklihood estimation to optimise the parameters
+    * can generate prediction intervals for all models.
+    * way of selecting the best model for a particular time series
+        * automatically select best model - equivalent to minimising SSE
+        * minimise Akaike Information Criterion AIC
+            * similar to CV, but much faster.
+The ETS function produces a model - you need to then pass that to the forecast()
+
+```{r}
+# Fit ETS model to austa in fitaus
+fitaus <- ets(austa)
+
+# Check residuals
+checkresiduals(fitaus)
+
+# Plot forecasts
+autoplot(forecast(fitaus))
+
+# Repeat for hyndsight data in fiths
+fiths <- ets(hyndsight)
+checkresiduals(fiths)
+autoplot(forecast(fiths))
+
+# Which model(s) fails test? (TRUE or FALSE)
+fitausfail <- FALSE
+fithsfail <- TRUE
+```
+
+
+Compare snaive() to ets() using tsCV()
+
+```{r}
+# Function to return ETS forecasts
+fets <- function(y, h) {
+  forecast(ets(y), h = h)
+}
+
+# Apply tsCV() for both methods
+e1 <- tsCV(cement, fets, h = 4)
+e2 <- tsCV(cement, snaive, h = 4)
+
+# Compute MSE of resulting errors (watch out for missing values)
+mean(e1^2, na.rm = T)
+mean(e2^2, na.rm = T)
+
+# Copy the best forecast MSE
+bestmse <- mean(e2^2, na.rm = T)
+```
+
+For some reason, ets does not work on lynx population! ?
+
+```{r}
+# Plot the lynx series
+autoplot(lynx)
+
+# Use ets() to model the lynx series
+fit <- ets(lynx)
+
+# Use summary() to look at model and parameters
+summary(fit)
+
+# Plot 20-year forecasts of the lynx series
+fit %>% forecast(20) %>% autoplot()
+```
+
+## Variance stabilisation
+
+IF ts variance is increasing over time, can be useful to transform:
+    * sqrt, cube rt, log, inverse
+    * use box cox to find exact answer
+        * boxcox.lambda(series)
+        * can add lambda into the modelling function args for ets()
+    * required mostly for ARIMA models
+    
+### Box Cox
+Find value of lambda that stabilises the series variance the most:
+
+```{r}
+
+# Try four values of lambda in Box-Cox transformations
+a10 %>% BoxCox(lambda = 0.0) %>% autoplot() # lambda = 0 is a log transform
+a10 %>% BoxCox(lambda = 0.1) %>% autoplot()
+a10 %>% BoxCox(lambda = 0.2) %>% autoplot()
+a10 %>% BoxCox(lambda = 0.3) %>% autoplot()
+
+# Compare with BoxCox.lambda()
+BoxCox.lambda(a10)
+
+```
+
+## Differencing
+
+Make a time series stationary by taking the difference - just try out is the approach i think
+if the data looks like white noise after differencing, this is good
+
+```{r}
+# Plot the differenced murder rate
+autoplot(wmurders%>% diff)
+
+# Plot the ACF of the differenced murder rate
+acf(diff(wmurders))
+ggAcf(diff(wmurders))
+
+```
+
+### Seasonal Differencing
+
+take the difference between an observation in one year and subtract the corresponding observation from last year (or seasonal equiv). i.e. diffs between Q1's one year and the previous.
+
+Sometimes you need to then take the lag-1 difference as well to become stationary.
+
+Make this data stationary:
+
+```{r}
+
+# Plot the data
+autoplot(h02)
+
+# Take logs and seasonal differences of h02
+difflogh02 <- diff(log(h02), lag = 12)
+
+# Plot difflogh02
+autoplot(difflogh02)
+
+# Take another difference and plot
+ddifflogh02 <- diff(difflogh02)
+
+# Plot ACF of ddifflogh02
+ggAcf(ddifflogh02)
+
+```
+
+## ARIMA models
+
+Stands for:
+
+* Auto Regressive - regression of the time series against the lagged values of that time series
+    * p = how many lagged values to use
+    
+* Moving Average model = regression of the time series against the lagged errors from the previous auto regressive model? 
+    * q = how many lagged errors to use
+
+These two make an ARMA model - which can only work with stationary data - therefore need to difference and transform the data first
+    * sum the auto regressive and moving average model i.e. the weighted lagged values and the weighted lagged errors.
+
+* Integrated - the opposite of differencing.
+    * difference the series d times
+    
+Need to decide on p,d,q values and whether a coefficient is used - called 'drift'
+
+```{r}
+
+# Fit an automatic ARIMA model to the austa series
+fit <- auto.arima(austa)
+
+# Check that the residuals look like white noise
+checkresiduals(fit)
+residualsok <- true
+
+# Summarize the model
+summary(fit)
+
+# Find the AICc value and the number of differences used
+AICc <- -14.46
+d <- 1
+
+# Plot forecasts of fit
+fit %>% forecast(h = 10) %>% autoplot()
+```
+
+The above code used auto.arima. Try specifying ARIMA parameters manually to assess the difference.
+
+Assigning drift, i.e. a constant, enables the forecast to trend for some reason. This is because c is equivalent to inducing a polynomial trend of order d. So if you're difference is just once, the polynomial trend will be to the first order - i.e. just x, instead of x^2 or similar.
+
+```{r}
+
+# Plot forecasts from an ARIMA(0,1,1) model with no drift
+austa %>% Arima(order = c(0, 1, 1), include.constant = FALSE) %>% forecast() %>% autoplot()
+
+# Plot forecasts from an ARIMA(2,1,3) model with drift
+austa %>% Arima(order = c(2,1,3), include.constant = TRUE) %>% forecast %>% autoplot
+
+# Plot forecasts from an ARIMA(0,0,1) model with a constant
+austa %>% Arima(order = c(0,0,1), include.constant = TRUE) %>% forecast %>% autoplot
+
+# Plot forecasts from an ARIMA(0,2,1) model with no constant
+austa %>% Arima(order = c(0,2,1), include.constant = FALSE) %>% forecast %>% autoplot
+
+```
+
+Compare ets to auto.arima using one step forward cross validation
+
+```{r}
+
+# Set up forecast functions for ETS and ARIMA models
+fets <- function(x, h) {
+  forecast(ets(x), h = h)
+}
+farima <- function(x, h) {
+  forecast(auto.arima(x), h = h)
+}
+
+# Compute CV errors for ETS as e1
+e1 <- tsCV(austa, fets, h = 1)
+
+# Compute CV errors for ARIMA as e2
+e2 <- tsCV(austa, farima, h = 1)
+
+# Find MSE of each model class
+mean(e1^2, na.rm = T)
+mean(e2^2, na.rm = T)
+
+# Plot 10-year forecasts using the best model class
+austa %>% farima(h=10) %>% autoplot()
+
+```
+
+### Seasonal Arima models
+
+Add another 3 terms: P, D, Q for the seasons as well as m.
+(P,D,Q)m
+
+P is the number of lagged values to include - offset by one season each time
+D is the number of seasonal differences to take
+Q is the number of lagged error values to iinclude in the regression - offset by one season at a time
+m is the number of observations in a year.
+
+The seasonal parts get multiplied by the non-seasonal parts of the model.
+This is no longer a linear model.
+
+If you do both seasonal and ordinary differencing (or two lots of differencing) a trend will appear in the forecasts without a constant.
+
+
+```{r}
+# Check that the logged h02 data have stable variance
+h02 %>% log %>% autoplot
+
+# Fit a seasonal ARIMA model to h02 with lambda = 0
+fit <- auto.arima(h02, lambda = 0, seasonal = T)
+
+# Summarize the fitted model
+summary(fit)
+
+# Record the amount of lag-1 differencing and seasonal differencing used
+d <- 1
+D <- 1
+
+# Plot 2-year forecasts
+fit %>% forecast(h = 24) %>% autoplot()
+```
+
+You can make auto.arima look at more models by setting stepwise = F
+
+```{r}
+# Find an ARIMA model for euretail
+fit1 <- auto.arima(euretail)
+
+# Don't use a stepwise search
+fit2 <- auto.arima(euretail, stepwise = FALSE)
+
+# AICc of better model
+AICc <- 68.39
+
+# Compute 2-year forecasts from better model
+fit2 %>% forecast(h = 8) %>% autoplot()
+```
+
+Compare auto arima seasonal models to ets
+With long time series you can split data into training and test sets. rather than time series cross validation which is much faster
+
+```{r}
+
+# Use 20 years of the qcement data beginning in 1988
+train <- window(qcement, start = 1988, end = c(2007, 4))
+
+# Fit an ARIMA and an ETS model to the training data
+fit1 <- auto.arima(train)
+fit2 <- ets(train)
+
+# Check that both models have white noise residuals
+checkresiduals(fit1)
+checkresiduals(fit2)
+
+# Produce forecasts for each model
+fc1 <- forecast(fit1, h = 25)
+fc2 <- forecast(fit2, h = 25)
+
+# Use accuracy() to find better model based on RMSE
+accuracy(fc1, qcement)
+accuracy(fc2, qcement)
+bettermodel <- fit2
+
+
+```
+
+# Dynamic Regression
+
+Multivariate time series regression
+
+y modelled as function of x_n explanatory variables.
+But - error term, e_t, is an ARIMA process. In normal regression, it is white noise.
+    * historical information about the time series is incorporated
+
+Add the xreg argument to the auto.arima() function. This is a matrix of predictor x variables.
+Then auto.arima automatically fits a dynamic regression model.
+This fits a lin reg to the variables, and then an ARIMA model to the errors.
+
+To forecast, need to provide future values of the predictors - enter in xreg function. 
+    * can either forecast these future values OR
+    * do scenarios - with different values of the future variables
+
+## Exercise 1
+
+adverts affect on sales
+
+```{r}
+# Time plot of both variables
+autoplot(advert, facets = TRUE)
+
+# Fit ARIMA model
+fit <- auto.arima(advert[, "sales"], xreg = advert[, "advert"], stationary = TRUE)
+
+# Check model. Increase in sales for each unit increase in advertising
+salesincrease <- coefficients(fit)[3]
+
+# Forecast fit as fc
+fc <- forecast(fit, xreg = rep(10, 6))
+
+# Plot fc with x and y labels
+autoplot(fc) + xlab("Month") + ylab("Sales")
+```
+
+## Exercise 2
+
+Electricity demand as a function of temperature
+ARMA model - no differencing (i.e. integrating)
+
+Non-workday == 0
+
+weekly seasonality so freq set to 7
+
+```{r}
+# Time plots of demand and temperatures
+autoplot(elec[, c("Demand", "Temperature")], facets = TRUE)
+
+# Matrix of regressors
+xreg <- cbind(MaxTemp = elec[, "Temperature"], 
+              MaxTempSq = elec[, "Temperature"]^2, 
+              Workday = elec[, "Workday"])
+
+# Fit model
+fit <- auto.arima(elec[,"Demand"], xreg = xreg)
+
+# Forecast fit one day ahead
+forecast(fit, xreg = cbind(20, 20^2, 1))
+```
+
+
+## Dynamic Harmonic Regression
+
+Uses fourier terms to handle seasonality
+The series of sine and cosine terms of the right frequency can approximate any periodic function.
+
+Use them for seasonal patterns when forecasting
+
+Fourier terms come in pairs - sine and a cosine
+    * the frequency of these terms is called the harmonic frequency.
+        * base period = seasonal period
+        * each additional term halves the period
+        * these increase with k (number of cos + sine pairs)
+        * frequency gets higher with more terms
+    * they are predictors in the dynamic regression model.
+        * the more terms you include, the more complex the seasonal pattern.
+        * K controls number of terms
+        * \alpha and \gamma are coefficients in regression model
+
+because seasonality is modelled with fourier terms - use non-seasonal ARIMA for error.
+    * however fourier models assume seasonality does not change over time whereas seasonal arima allows pattern to evolve over time.
+    
+`fourier()` includes all the fourier terms in the model. Choose value of K - indicates how complex the seasonal pattern will be.
+As you increase K - the ARIMA error model will get simpler.
+Try a few different values of K and select model with lowest AICC value.
+    * K can't be more than half the seasonal period. 
+    * each K is simply the sine and cosine function (btwn 1 and -1) with halving periods. The regression function finds the best multiplier. cool!
+You can add other terms as well as fourier terms - add to xreg matrix.
+
+Fourier terms are good when the seasonal length is very high - a year = 365 days.
+
+
+```{r}
+
+# Set up harmonic regressors of order 13
+harmonics <- fourier(gasoline, K = 13)
+
+# Fit regression model with ARIMA errors
+fit <- auto.arima(gasoline, xreg = harmonics, seasonal = FALSE)
+
+# Forecasts next 3 years
+newharmonics <- fourier(gasoline, K = 13, h = 3*52)
+fc <- forecast(fit, xreg = newharmonics)
+
+# Plot forecasts fc
+autoplot(fc)
+
+```
+
+### Harmonic regression for multiple seasonality
+
+auto.arima too slow for long time series (every half hour)
+
+Therefore fit a standard regression with fourier terms - tslm() function.
+    * like lm() for for time series data.
+    
+Need to specify K for each of the seasonal periods.
+
+Fitting daily seasonality AND weekly.
+
+
+Results show auto.arima probably would have done a better job?
+```{r}
+
+# Fit a harmonic regression using order 10 for each type of seasonality
+fit <- tslm(taylor ~ fourier(taylor, K = c(10, 10)))
+
+# Forecast 20 working days ahead
+fc <- forecast(fit, newdata = data.frame(fourier(taylor, K = c(10,10), h = 4*7*24*2)))
+
+# Plot the forecasts
+autoplot(fc)
+
+# Check the residuals of fit
+checkresiduals(fit)
+
+```
+
+Residual test fail badly, but results are still good - commentary in data camp?
+
+### multiple seasonality example 2
+
+calls df, which contains 20 consecutive days of 5-minute call volume data for a large North American bank. There are 169 5-minute periods in a working day, and so the weekly seasonal frequency is 5 x 169 = 845. The weekly seasonality is relatively weak, so here you will just model daily seasonality.
+
+The residuals in this case still fail the white noise tests, but their autocorrelations are tiny, even though they are significant. This is because the series is so long. It is often unrealistic to have residuals that pass the tests for such long series. The effect of the remaining correlations on the forecasts will be negligible.
+
+```{r}
+# Plot the calls data
+autoplot(calls)
+
+# Set up the xreg matrix
+xreg <- fourier(calls, K = c(10, 0))
+
+# Fit a dynamic regression model
+fit <- auto.arima(calls, xreg = xreg, seasonal = FALSE, stationary = TRUE)
+
+# Check the residuals
+checkresiduals(fit)
+
+# Plot forecasts for 10 working days ahead
+fc <- forecast(fit, xreg =  fourier(calls, c(10, 0), h = 10*169))
+autoplot(fc)
+```
+
+
+## TBATS model
+
+put all components we've used into a single automated framework
+
+* Trig terms for seasonality (like fourier terms in harmonic regression)
+    * except seasonality can change over time
+* includes boxcox transformation
+* ARMA errors like a dynamic regression
+* level and trend terms - like ETS model
+* seasonal - including multiple and non-integer periods.
+
+Easy but dangerous
+    * prediction intervals are often a bit too wide
+    * also very slow
+
+Output in graph = TBATS(1, {0,0}, -, {<51.18,14>})
+
+meaning:
+    * 1 = boxcox lambda param
+    * {0,0} = ARMA error - p and q?
+    * - = damping param
+    * {\<51.18,14>} = 	Seasonal period (weeks), number of Fourier terms
+
+The gas data contains Australian monthly gas production. A plot of the data shows the variance has changed a lot over time, so it needs a transformation. The seasonality has also changed shape over time, and there is a strong trend. This makes it an ideal series to test the tbats() function which is designed to handle these features.
+
+```{r}
+
+# Plot the gas data
+autoplot(gas)
+
+# Fit a TBATS model to the gas data
+fit <- tbats(gas)
+
+# Forecast the series for the next 5 years
+fc <- forecast(fit, h = 5*12)
+
+# Plot the forecasts
+autoplot(fc)
+
+# Record the Box-Cox parameter and the order of the Fourier terms
+lambda <- .082
+K <- 5
+
+
+```
+
+
+
+
+
+
+
+
+
+
